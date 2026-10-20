@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace UserService.Common;
+namespace Api.Common;
 
 /// <summary>
 /// Добавляет глобальный префикс ко всем маршрутам всех контроллеров,

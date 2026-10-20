@@ -1,6 +1,7 @@
-using UserService.Models;
+using Api.Contracts;
+using Api.Models;
 
-namespace UserService.Repositories;
+namespace Api.Repositories.Interfaces;
 
 public interface IUserRepository
 {

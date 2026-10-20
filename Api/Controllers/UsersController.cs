@@ -1,8 +1,8 @@
 using AlfaHackaton.Controllers.Controllers;
+using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using UserService.Repositories;
 
-namespace UserService.Controllers;
+namespace Api.Controllers;
 
 /// <summary>
 /// Ручки для работы с пользователями.
@@ -10,11 +10,11 @@ namespace UserService.Controllers;
 /// </summary>
 public class UsersController : BaseAuthController
 {
-    private readonly IUserRepository _repository;
+    private readonly IUserService _service;
 
-    public UsersController(IUserRepository repository)
+    public UsersController(IUserService service)
     {
-        _repository = repository;
+        _service = service;
     }
 
     /// <summary>
@@ -23,7 +23,7 @@ public class UsersController : BaseAuthController
     [HttpGet("users")]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
-        var users = await _repository.GetAllAsync(cancellationToken);
+        var users = await _service.GetAllAsync(cancellationToken);
         return Ok(users);
     }
 
@@ -33,7 +33,7 @@ public class UsersController : BaseAuthController
     [HttpGet("users/{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _repository.GetByIdAsync(id, cancellationToken);
+        var user = await _service.GetByIdAsync(id, cancellationToken);
         return user is null
             ? NotFound(new { error = $"Пользователь с id {id} не найден" })
             : Ok(user);

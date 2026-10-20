@@ -2,9 +2,11 @@ using System.Reflection;
 using AlfaHackaton.Controllers;
 using AlfaHackaton.DapperContext;
 using Dapper;
-using UserService.Common;
-using UserService.Repositories;
-using UserService.Settings;
+using Api.Common;
+using Api.Repositories;
+using Api.Repositories.Interfaces;
+using Api.Services.Interfaces;
+using Api.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,8 @@ var dapperSettings = new DapperSettings(
 builder.Services.AddDapper(dapperSettings);
 builder.Services.AddMigrations(dapperSettings, Assembly.GetExecutingAssembly());
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+// Слой бизнес-логики: контроллеры работают только с сервисом
+builder.Services.AddSingleton<IUserService, Api.Services.UserService>();
 
 // Контроллеры. Токен уже провалидирован auth-gateway, поэтому без повторной валидации.
 // Глобальный префикс user-service для всех контроллеров

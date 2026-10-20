@@ -1,13 +1,13 @@
 using FluentMigrator;
 
-namespace UserService.Migrations;
+namespace Api.Migrations;
 
 /// <summary>
 /// Создаёт таблицу users и наполняет её тестовыми пользователями.
 /// Пароли в сидах: qwerty123, password123, 12345678 (bcrypt).
 /// </summary>
 [Migration(20261019001)]
-public class AddUsersTable : Migration
+public class M0000_AddUsersTable : Migration
 {
     public override void Up()
     {

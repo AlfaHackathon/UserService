@@ -1,9 +1,9 @@
+using Api.Contracts;
+using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
-using UserService.Models;
-using UserService.Repositories;
 
-namespace UserService.Controllers;
+namespace Api.Controllers;
 
 /// <summary>
 /// Внутренние ручки для сервисов кластера (auth-service).
@@ -16,12 +16,12 @@ public class UsersInternalController : ControllerBase
 {
     private const string InternalSecretHeader = "X-Internal-Secret";
 
-    private readonly IUserRepository _repository;
+    private readonly IUserService _service;
     private readonly IConfiguration _configuration;
 
-    public UsersInternalController(IUserRepository repository, IConfiguration configuration)
+    public UsersInternalController(IUserService service, IConfiguration configuration)
     {
-        _repository = repository;
+        _service = service;
         _configuration = configuration;
     }
 
@@ -36,7 +36,7 @@ public class UsersInternalController : ControllerBase
             return Unauthorized(new { error = "Недоступно извне кластера" });
         }
 
-        var user = await _repository.GetByEmailAsync(email, cancellationToken);
+        var user = await _service.GetByEmailAsync(email, cancellationToken);
         return user is null
             ? NotFound(new { error = $"Пользователь с email {email} не найден" })
             : Ok(user);
@@ -53,7 +53,7 @@ public class UsersInternalController : ControllerBase
             return Unauthorized(new { error = "Недоступно извне кластера" });
         }
 
-        var exists = await _repository.ExistsByEmailAsync(email, cancellationToken);
+        var exists = await _service.ExistsByEmailAsync(email, cancellationToken);
         return Ok(new { exists });
     }
 
@@ -70,7 +70,7 @@ public class UsersInternalController : ControllerBase
 
         try
         {
-            var user = await _repository.AddAsync(
+            var user = await _service.AddAsync(
                 request.LastName, request.FirstName, request.MiddleName, request.Email,
                 request.HashedPassword, cancellationToken);
             return Ok(user);
@@ -90,7 +90,3 @@ public class UsersInternalController : ControllerBase
     }
 }
 
-/// <summary>
-/// Данные для создания пользователя.
-/// </summary>
-public record CreateUserRequest(string LastName, string FirstName, string? MiddleName, string Email, string HashedPassword);

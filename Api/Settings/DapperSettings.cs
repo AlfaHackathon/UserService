@@ -1,6 +1,6 @@
 using AlfaHackaton.DapperContext.Common.Interfaces.Dapper.Settings;
 
-namespace UserService.Settings;
+namespace Api.Settings;
 
 /// <summary>
 /// Настройки подключения к Postgres для DapperContext.
