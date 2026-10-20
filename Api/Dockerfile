@@ -9,7 +9,7 @@ ARG BUILD_CONFIGURATION=Release
 # Токен (read:packages) для восстановления пакета AlfaHackaton.DapperContext из GitHub Packages
 ARG GITHUB_TOKEN
 WORKDIR /src
-COPY ["UserService/UserService.csproj", "UserService/"]
+COPY ["Api/Api.csproj", "Api/"]
 RUN if [ -n "$GITHUB_TOKEN" ]; then \
         dotnet nuget add source "https://nuget.pkg.github.com/AlfaHackathon/index.json" \
             --name github \
@@ -17,16 +17,16 @@ RUN if [ -n "$GITHUB_TOKEN" ]; then \
             --password "$GITHUB_TOKEN" \
             --store-password-in-clear-text; \
     fi
-RUN dotnet restore "UserService/UserService.csproj"
+RUN dotnet restore "Api/Api.csproj"
 COPY . .
-WORKDIR "/src/UserService"
-RUN dotnet build "./UserService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Api"
+RUN dotnet build "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./UserService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "UserService.dll"]
+ENTRYPOINT ["dotnet", "Api.dll"]
