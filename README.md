@@ -6,8 +6,9 @@
 
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/user-service/users` | все пользователи (без хэша пароля) |
-| GET | `/user-service/users/{id:guid}` | пользователь по id |
+| GET | `/user-service/users/me` | профиль текущего пользователя |
+| GET | `/user-service/users` | пользователи своей компании; без компании — пустой список |
+| GET | `/user-service/users/{id:guid}` | пользователь по id; 403 — если он из другой компании |
 | GET | `/user-service/ping` | health-check |
 | GET | `/user-service/internal/users/by-email/{email}` | пользователь по email с хэшем (только для auth-service) |
 | GET | `/user-service/internal/users/exists-by-email/{email}` | `{ "exists": bool }` (только для auth-service) |
