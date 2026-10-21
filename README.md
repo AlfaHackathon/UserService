@@ -25,3 +25,5 @@ Internal-ручки закрыты заголовком **`X-Internal-Secret`** 
 - Swagger UI: `/user-service/swagger` (включается флагом `Swagger__Enabled`).
 - Строка подключения: `ConnectionStrings__Postgres`.
 - Запуск — из папки `../cluster`: `docker compose up -d --build`.
+
+Проверка загрузки встроенных SQL-ресурсов: `dotnet run --project tests/ResourceSmokeTest -c Release`.
