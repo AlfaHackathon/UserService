@@ -11,4 +11,7 @@ public class UserResponse
     public string? MiddleName { get; set; }
     public required string Email { get; set; }
     public required DateTime CreatedAt { get; set; }
+    /// <summary>Роль пользователя; null — пока не назначена (после регистрации).</summary>
+    public Guid? RoleId { get; set; }
+    public string? RoleName { get; set; }
 }

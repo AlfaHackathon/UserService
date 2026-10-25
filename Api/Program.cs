@@ -20,6 +20,7 @@ var dapperSettings = new DapperSettings(
 builder.Services.AddDapper(dapperSettings);
 builder.Services.AddMigrations(dapperSettings, Assembly.GetExecutingAssembly());
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IRoleRepository, RoleRepository>();
 // Клиент company-service через AlfaHackaton.HttpClient:
 // BaseAddress/секрет в CompanyServiceClientSettings, DI — через пакет
 builder.Services.AddAlfaHttpClient(new CompanyServiceClientSettings(builder.Configuration));
@@ -27,6 +28,7 @@ builder.Services.AddAlfaHttpClient(new CompanyServiceClientSettings(builder.Conf
 // Scoped, т.к. тянет типизированный HttpClient клиента company-service
 builder.Services.AddScoped<IUserService, Api.Services.UserService>();
 builder.Services.AddScoped<ICompanyServiceClient, CompanyServiceClient>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Контроллеры. Токен уже провалидирован auth-gateway, поэтому без повторной валидации.
 // Глобальный префикс user-service для всех контроллеров
