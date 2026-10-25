@@ -9,7 +9,7 @@ namespace Api.Resources;
 public static class UserSql
 {
     private static readonly ResourceManager Manager =
-        new("UserService.Resources.UserSql", typeof(UserSql).Assembly);
+        new(typeof(UserSql).FullName!, typeof(UserSql).Assembly);
 
     public static string GetAll { get; } = Manager.GetString(nameof(GetAll))
         ?? throw new InvalidOperationException("Ресурс UserSql.GetAll не найден");

@@ -59,13 +59,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="GetAll" xml:space="preserve">
-    <value>SELECT id, last_name, first_name, middle_name, email, created_at
-FROM users</value>
+    <value>SELECT u.id, u.last_name, u.first_name, u.middle_name, u.email, u.created_at,
+u.role_id, r.name AS role_name
+FROM users u
+LEFT JOIN roles r ON r.id = u.role_id</value>
   </data>
   <data name="GetById" xml:space="preserve">
-    <value>SELECT id, last_name, first_name, middle_name, email, created_at
-FROM users
-WHERE id = @id</value>
+    <value>SELECT u.id, u.last_name, u.first_name, u.middle_name, u.email, u.created_at,
+u.role_id, r.name AS role_name
+FROM users u
+LEFT JOIN roles r ON r.id = u.role_id
+WHERE u.id = @id</value>
   </data>
   <data name="GetByEmail" xml:space="preserve">
     <value>SELECT id, last_name, first_name, middle_name, email, hashed_password, created_at
