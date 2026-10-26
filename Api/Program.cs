@@ -29,6 +29,7 @@ builder.Services.AddAlfaHttpClient(new CompanyServiceClientSettings(builder.Conf
 builder.Services.AddScoped<IUserService, Api.Services.UserService>();
 builder.Services.AddScoped<ICompanyServiceClient, CompanyServiceClient>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ViewerContextService>();
 
 // Контроллеры. Токен уже провалидирован auth-gateway, поэтому без повторной валидации.
 // Глобальный префикс user-service для всех контроллеров
