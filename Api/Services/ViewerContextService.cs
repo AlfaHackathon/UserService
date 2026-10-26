@@ -13,6 +13,7 @@ public sealed class ViewerContextService(
     IRoleRepository roles,
     ICompanyServiceClient companies,
     IViewerContextRepository snapshots,
+    ISourceAccountRepository sourceAccounts,
     TimeProvider clock)
 {
     public async Task<Result<ViewerContextResponse>> GetAsync(
@@ -39,6 +40,8 @@ public sealed class ViewerContextService(
         var requestHash = ViewerContextSnapshots.RequestHash(request);
         var existing = await snapshots.FindAsync(userId, companyId, request.RevisionId);
         if (existing is not null) return Replay(existing, requestHash, userId, companyId, request.RevisionId);
+        if (!SourceAccountProfiles.ViewerCompatible(await sourceAccounts.IdentityAsync(userId), userId, companyId, request.SourcePersonId))
+            return new(Fail("Viewer capture must preserve the canonical account source pair.", HttpStatusCode.Conflict));
 
         ViewerRoleResponse? viewerRole = null;
         if (scope.User!.RoleId is { } roleId)

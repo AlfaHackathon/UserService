@@ -136,6 +136,28 @@ internal static class ViewerContextChecks
         await Status(f.Capture(), HttpStatusCode.Conflict);
         Check(f.Snapshots.Revisions.Count == 0, "Failed inserts must not claim a captured snapshot.");
 
+        f = new Fixture();
+        f.Sources.Identities.Add(new(f.UserId, f.Request.SourcePersonId!.Value, f.CompanyId));
+        Check((await f.Capture()).Error is null, "Exact canonical identity remains compatible with authenticated capture.");
+        f = new Fixture();
+        f.Sources.Identities.Add(new(f.UserId, Guid.NewGuid(), f.CompanyId));
+        await Status(f.Capture(), HttpStatusCode.Conflict);
+        Check(f.Snapshots.Captures == 0, "Canonical identity conflicts must fail in viewer preflight.");
+        f = new Fixture();
+        f.Sources.Identities.Add(new(f.UserId, f.Request.SourcePersonId!.Value, f.CompanyId));
+        await Status(f.Service.CaptureAsync(f.UserId, f.CompanyId, f.Request with { SourcePersonId = null }), HttpStatusCode.Conflict);
+
+        f = new Fixture();
+        f.Request = f.Request with { SourcePersonId = null };
+        var legacy = await f.Capture();
+        f.Sources.Identities.Add(new(f.UserId, Guid.NewGuid(), f.CompanyId));
+        Check((await f.Capture()).Content == legacy.Content && f.Snapshots.Captures == 1,
+            "An exact legacy revision replay must survive later canonical identity creation without a new write.");
+        await Status(f.Service.CaptureAsync(f.UserId, f.CompanyId, f.Request with { RevisionId = "new-null-lineage" }), HttpStatusCode.Conflict);
+        Check(f.Snapshots.Captures == 1, "A new null-lineage capture must still respect the present canonical pair.");
+        f.Companies.Value = null;
+        await Status(f.Capture(), HttpStatusCode.Forbidden);
+
         foreach (var secret in new[] { "", "wrong", "fixture-internal" })
         {
             f = new Fixture();
@@ -183,6 +205,7 @@ internal static class ViewerContextChecks
         public FakeCompanies Companies { get; }
         public FakeRoles Roles { get; } = new();
         public FakeSnapshots Snapshots { get; } = new();
+        public FakeSourceAccounts Sources { get; } = new();
         public Clock Clock { get; } = new();
         public CaptureViewerContextRequest Request { get; set; } = new("revision-1", Guid.NewGuid(), new(null, null), new("synthetic-person-context", "v1", new string('a', 64)));
         public ViewerContextService Service { get; }
@@ -190,7 +213,7 @@ internal static class ViewerContextChecks
         {
             Users = new() { Value = new UserResponse { Id = UserId, FirstName = "private-first", LastName = "private-last", Email = "private@example.invalid", CreatedAt = DateTime.UtcNow } };
             Companies = new() { Value = new CompanyInfoResponse { Id = CompanyId, Name = "private-company" } };
-            Service = new(Users, Roles, Companies, Snapshots, Clock);
+            Service = new(Users, Roles, Companies, Snapshots, Sources, Clock);
         }
         public void Assign(string name, bool isDefault)
         {

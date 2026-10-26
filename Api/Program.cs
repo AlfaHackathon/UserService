@@ -31,6 +31,8 @@ builder.Services.AddScoped<ICompanyServiceClient, CompanyServiceClient>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IViewerContextRepository, ViewerContextRepository>();
 builder.Services.AddScoped<ViewerContextService>();
+builder.Services.AddScoped<ISourceAccountRepository, SourceAccountRepository>();
+builder.Services.AddScoped<SourceAccountService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Контроллеры. Токен уже провалидирован auth-gateway, поэтому без повторной валидации.

@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Api.Contracts;
 
 namespace Api.Services;
@@ -22,7 +21,7 @@ public static class ViewerContextSnapshots
 
     public static bool ValidProvenance(ViewerContextProvenance? provenance) => provenance is not null &&
         ValidIdentifier(provenance.SourceId) && ValidIdentifier(provenance.VersionId) &&
-        provenance.ContentHash is not null && Regex.IsMatch(provenance.ContentHash, "^[a-f0-9]{64}$", RegexOptions.CultureInvariant);
+        provenance.ContentHash is { Length: 64 } hash && hash.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     public static bool ValidCapture(CaptureViewerContextRequest? request) => request is not null &&
         ValidIdentifier(request.RevisionId) && request.SourcePersonId != Guid.Empty &&

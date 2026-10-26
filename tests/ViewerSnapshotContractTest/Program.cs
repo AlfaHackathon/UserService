@@ -38,6 +38,11 @@ Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new
 Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new(null, "a\0b") }), "The NUL storage guard applies to both geography fields.");
 Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new(new string('x', 16001), null) }), "Geography length is bounded only as a request resource limit.");
 Check(!ViewerContextSnapshots.ValidCapture(request with { Provenance = request.Provenance with { ContentHash = "wrong" } }), "Provenance requires an exact SHA256.");
+foreach (var suffix in new[] { "\n", "\r\n" })
+{
+    Check(!ViewerContextSnapshots.ValidCapture(request with { Provenance = request.Provenance with { ContentHash = new string('a', 64) + suffix } }),
+        "Viewer provenance must reject trailing LF/CRLF instead of accepting a partial regex match.");
+}
 
 var snapshot = ViewerContextSnapshots.Capture(user, company, request, null, at);
 Check(snapshot.Role is null && snapshot.ServiceGeography == new ServiceGeography(null, null), "No role or geography may be invented.");

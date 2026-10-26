@@ -21,8 +21,11 @@ public sealed class ViewerContextRepository(IDapperContext database) : IViewerCo
     public async Task<bool> TryCaptureAsync(ViewerContextResponse context, string requestHash, Guid? sourcePersonId)
     {
         using var transaction = database.BeginTransaction();
+        await transaction.Command(new QueryObject(SourceAccountSql.Lock));
         var user = await transaction.CommandWithResponse<Guid>(new QueryObject(ViewerContextSql.LockUser, new { userId = context.UserId }));
         if (user != context.UserId) return false;
+        if (!await transaction.CommandWithResponse<bool>(new QueryObject(SourceAccountSql.ViewerCompatible,
+            new { userId = context.UserId, companyId = context.CompanyId, sourcePersonId }))) return false;
         var previousTime = await transaction.CommandWithResponse<long>(new QueryObject(ViewerContextSql.LastTime, new { userId = context.UserId }));
         if (previousTime >= context.KnownAt.UtcTicks) return false;
 
