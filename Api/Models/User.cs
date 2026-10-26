@@ -12,4 +12,8 @@ public class User
     public required string Email { get; set; }
     public required string HashedPassword { get; set; }
     public required DateTime CreatedAt { get; set; }
+    // Nullable canonical context. SourcePersonId is source lineage, not an account alias or an access grant.
+    public Guid? SourcePersonId { get; set; }
+    public string? CityName { get; set; }
+    public string? RcName { get; set; }
 }
