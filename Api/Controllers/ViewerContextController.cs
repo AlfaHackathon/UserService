@@ -27,12 +27,14 @@ public sealed class ViewerContextController(ViewerContextService viewers, IConfi
 
     /// <summary>Explicitly capture declared nullable context and the existing account role; never creates an account or a grant.</summary>
     [HttpPost("{userId:guid}/viewer-context")]
+    [RequestSizeLimit(64 * 1024)]
     [ProducesResponseType<ViewerContextResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(StatusCodes.Status502BadGateway)]
     public async Task<IActionResult> CaptureAsync(Guid userId, [FromQuery, BindRequired] Guid companyId,
         [FromBody] CaptureViewerContextRequest request, CancellationToken cancellationToken = default)

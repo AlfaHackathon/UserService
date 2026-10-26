@@ -20,7 +20,23 @@ var request = new CaptureViewerContextRequest("capture-1", sourcePerson, new(nul
 Check(ViewerContextSnapshots.ValidCapture(request), "Explicit nullable geography and actual source lineage must be accepted.");
 Check(ViewerContextSnapshots.ValidCapture(request with { SourcePersonId = null }), "Missing lineage remains null.");
 Check(!ViewerContextSnapshots.ValidCapture(request with { SourcePersonId = Guid.Empty }), "Empty UUID is not valid lineage.");
-Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new("", null) }), "Unknown geography must be null, not blank.");
+var rawGeographies = new string?[] { null, "", "  ", " \tМосква\u00a0  ", "城市e\u0301😀", new string('x', 300), new string('x', 16000) };
+var geographyHashes = new HashSet<string>();
+foreach (var raw in rawGeographies)
+{
+    var rawRequest = request with { ServiceGeography = new(raw, raw) };
+    Check(ViewerContextSnapshots.ValidCapture(rawRequest), "Raw geography must preserve null, blanks, spacing, Unicode and values longer than 256 characters.");
+    var rawSnapshot = ViewerContextSnapshots.Capture(user, company, rawRequest, null, at);
+    Check(rawSnapshot.ServiceGeography == rawRequest.ServiceGeography && ViewerContextSnapshots.ValidSnapshot(rawSnapshot, user, company, at),
+        "Raw geography must retain its exact value in a valid snapshot.");
+    var roundTrip = JsonSerializer.Deserialize<ViewerContextResponse>(JsonSerializer.Serialize(rawSnapshot, ViewerContextSnapshots.Json), ViewerContextSnapshots.Json)!;
+    Check(roundTrip.ServiceGeography == rawRequest.ServiceGeography && roundTrip.ContentHash == rawSnapshot.ContentHash &&
+        ViewerContextSnapshots.ContentHash(roundTrip) == rawSnapshot.ContentHash, "Exact raw geography and its hash must survive JSON roundtrip.");
+    Check(geographyHashes.Add(rawSnapshot.ContentHash), "Null, empty, spacing and Unicode source values must remain distinct snapshot content.");
+}
+Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new("a\0b", null) }), "NUL is rejected at the PostgreSQL text storage boundary.");
+Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new(null, "a\0b") }), "The NUL storage guard applies to both geography fields.");
+Check(!ViewerContextSnapshots.ValidCapture(request with { ServiceGeography = new(new string('x', 16001), null) }), "Geography length is bounded only as a request resource limit.");
 Check(!ViewerContextSnapshots.ValidCapture(request with { Provenance = request.Provenance with { ContentHash = "wrong" } }), "Provenance requires an exact SHA256.");
 
 var snapshot = ViewerContextSnapshots.Capture(user, company, request, null, at);
@@ -32,6 +48,12 @@ Check(!ViewerContextSnapshots.ValidSnapshot(snapshot, user, Guid.NewGuid(), at),
 Check(!ViewerContextSnapshots.ValidSnapshot(snapshot with { ServiceGeography = new("changed", null) }, user, company, at), "Geography changes invalidate the snapshot hash.");
 Check(!ViewerContextSnapshots.ValidSnapshot(snapshot with { SourceOwner = "company-service" }, user, company, at), "Owner isolation is explicit.");
 Check(!ViewerContextSnapshots.ValidSnapshot(snapshot with { Role = new(Guid.NewGuid(), null!, false) }, user, company, at), "Malformed roles fail closed without throwing.");
+foreach (var invalidRole in new[] { "", " Финансист ", "role\tname", new string('x', 129) })
+{
+    var invalidRoleSnapshot = snapshot with { Role = new(Guid.NewGuid(), invalidRole, false) };
+    invalidRoleSnapshot = invalidRoleSnapshot with { ContentHash = ViewerContextSnapshots.ContentHash(invalidRoleSnapshot) };
+    Check(!ViewerContextSnapshots.ValidSnapshot(invalidRoleSnapshot, user, company, at), "Role-name validation remains separate and unchanged.");
+}
 Check(ViewerContextSnapshots.RequestHash(request) == ViewerContextSnapshots.RequestHash(request with { }), "Idempotent requests have a stable fingerprint.");
 Check(ViewerContextSnapshots.RequestHash(request) != ViewerContextSnapshots.RequestHash(request with { SourcePersonId = null }), "Internal lineage changes must conflict with a reused revision.");
 

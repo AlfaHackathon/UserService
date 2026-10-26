@@ -18,7 +18,7 @@ public static class ViewerContextSnapshots
         value is { Length: > 0 and <= 200 } && value.Trim() == value && !value.Any(char.IsControl);
 
     public static bool ValidGeography(ServiceGeography? geography) => geography is not null &&
-        ValidOptionalName(geography.CityName) && ValidOptionalName(geography.RcName);
+        ValidRawGeography(geography.CityName) && ValidRawGeography(geography.RcName);
 
     public static bool ValidProvenance(ViewerContextProvenance? provenance) => provenance is not null &&
         ValidIdentifier(provenance.SourceId) && ValidIdentifier(provenance.VersionId) &&
@@ -54,11 +54,15 @@ public static class ViewerContextSnapshots
         context.UserId == userId && context.CompanyId == companyId && context.KnownAt != default && context.KnownAt <= asOf &&
         context.SourceOwner == SourceOwner && ValidIdentifier(context.RevisionId) && ValidGeography(context.ServiceGeography) &&
         ValidProvenance(context.Provenance) &&
-        (context.Role is null || context.Role.Id != Guid.Empty && context.Role.Name is { Length: > 0 and <= 128 } && ValidOptionalName(context.Role.Name)) &&
+        (context.Role is null || context.Role.Id != Guid.Empty && ValidRoleName(context.Role.Name)) &&
         context.ContentHash == ContentHash(context);
 
-    private static bool ValidOptionalName(string? value) => value is null ||
-        value is { Length: > 0 and <= 256 } && value.Trim() == value && !value.Any(char.IsControl);
+    // A request resource bound and PostgreSQL text boundary, not a source-field normalization rule.
+    private static bool ValidRawGeography(string? value) => value is null ||
+        value.Length <= 16000 && !value.Contains('\0');
+
+    private static bool ValidRoleName(string? value) =>
+        value is { Length: > 0 and <= 128 } && value.Trim() == value && !value.Any(char.IsControl);
 
     private static string Hash<T>(T value) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, Json))));

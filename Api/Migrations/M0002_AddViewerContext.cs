@@ -8,8 +8,8 @@ public sealed class M0002_AddViewerContext : Migration
     public override void Up()
     {
         Alter.Table("users").AddColumn("source_person_id").AsGuid().Nullable();
-        Alter.Table("users").AddColumn("city_name").AsString(256).Nullable();
-        Alter.Table("users").AddColumn("rc_name").AsString(256).Nullable();
+        Alter.Table("users").AddColumn("city_name").AsString(int.MaxValue).Nullable();
+        Alter.Table("users").AddColumn("rc_name").AsString(int.MaxValue).Nullable();
         Create.Table("user_context_revisions")
             .WithColumn("user_id").AsGuid().NotNullable().ForeignKey("users", "id")
             .WithColumn("company_id").AsGuid().NotNullable()

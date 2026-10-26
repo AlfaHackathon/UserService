@@ -10,6 +10,7 @@ using Api.Services;
 using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.Extensions.Configuration;
 
 internal static class ViewerContextChecks
@@ -18,6 +19,9 @@ internal static class ViewerContextChecks
 
     public static async Task Run()
     {
+        var captureLimit = (IRequestSizeLimitMetadata)typeof(ViewerContextController).GetMethod(nameof(ViewerContextController.CaptureAsync))!
+            .GetCustomAttributes(typeof(RequestSizeLimitAttribute), false).Single();
+        Check(captureLimit.MaxRequestBodySize == 64 * 1024, "The HTTP capture boundary must limit bodies to 64 KiB.");
         var f = new Fixture();
         await Status(f.Read(), HttpStatusCode.NotFound);
         Check(f.Snapshots.Captures == 0 && f.Roles.Reads == 0, "GET must not capture or consult the live role.");
@@ -108,6 +112,24 @@ internal static class ViewerContextChecks
         await Status(f.Service.GetAsync(Guid.Empty, f.CompanyId, f.Clock.Now), HttpStatusCode.BadRequest);
         await Status(f.Service.CaptureAsync(f.UserId, f.CompanyId, f.Request with { SourcePersonId = Guid.Empty }), HttpStatusCode.BadRequest);
         Check(f.Users.Reads == 0, "Malformed requests must fail before account access.");
+
+        foreach (var raw in new string?[] { null, "", " \t ", " \tМосква\u00a0  ", "城市e\u0301😀", new string('x', 300), new string('x', 16000) })
+        {
+            f = new Fixture();
+            f.Request = f.Request with { ServiceGeography = new(raw, raw) };
+            var rawCapture = await f.Capture();
+            Check(rawCapture.Error is null && rawCapture.Content!.ServiceGeography == f.Request.ServiceGeography,
+                "Capture must preserve raw nullable/blank/spacing/Unicode/long geography without trimming.");
+            var rawRead = await f.Read();
+            var roundTrip = JsonSerializer.Deserialize<ViewerContextResponse>(
+                JsonSerializer.Serialize(rawRead.Content, ViewerContextSnapshots.Json), ViewerContextSnapshots.Json)!;
+            Check(roundTrip.ServiceGeography == f.Request.ServiceGeography && roundTrip.ContentHash == rawCapture.Content!.ContentHash,
+                "Historical read and JSON must retain the exact captured raw geography/hash.");
+        }
+        f = new Fixture();
+        await Status(f.Service.CaptureAsync(f.UserId, f.CompanyId, f.Request with { ServiceGeography = new("a\0b", null) }), HttpStatusCode.BadRequest);
+        await Status(f.Service.CaptureAsync(f.UserId, f.CompanyId, f.Request with { ServiceGeography = new(null, new string('x', 16001)) }), HttpStatusCode.BadRequest);
+        Check(f.Users.Reads == 0, "Storage/resource-invalid geography must fail before account access.");
 
         f = new Fixture();
         f.Snapshots.Conflict = true;
