@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Api/Contracts/CaptureSourceAccountRequest.cs" Link="Production/CaptureSourceAccountRequest.cs" />
+    <Compile Include="../../Api/Contracts/UserSourceAccountProfile.cs" Link="Production/UserSourceAccountProfile.cs" />
+    <Compile Include="../../Api/Contracts/ViewerContextResponse.cs" Link="Production/ViewerContextResponse.cs" />
+    <Compile Include="../../Api/Contracts/CaptureViewerContextRequest.cs" Link="Production/CaptureViewerContextRequest.cs" />
+    <Compile Include="../../Api/Models/UserSourceAccountIdentity.cs" Link="Production/UserSourceAccountIdentity.cs" />
+    <Compile Include="../../Api/Services/SourceAccountProfiles.cs" Link="Production/SourceAccountProfiles.cs" />
+    <Compile Include="../../Api/Services/ViewerContextSnapshots.cs" Link="Production/ViewerContextSnapshots.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Find" xml:space="preserve"><value>SELECT snapshot_json, request_hash FROM user_context_revisions
+WHERE user_id = @userId AND company_id = @companyId AND revision_id = @revisionId</value></data>
+  <data name="Latest" xml:space="preserve"><value>SELECT snapshot_json, request_hash FROM user_context_revisions
+WHERE user_id = @userId AND company_id = @companyId AND known_at_ticks &lt;= @asOfTicks
+ORDER BY known_at_ticks DESC LIMIT 1</value></data>
+  <data name="LockUser" xml:space="preserve"><value>SELECT COALESCE((SELECT id FROM users WHERE id = @userId FOR UPDATE),
+'00000000-0000-0000-0000-000000000000'::uuid) AS id</value></data>
+  <data name="LastTime" xml:space="preserve"><value>SELECT COALESCE(MAX(known_at_ticks), 0) FROM user_context_revisions
+WHERE user_id = @userId</value></data>
+  <data name="Insert" xml:space="preserve"><value>WITH inserted AS (INSERT INTO user_context_revisions
+(user_id, company_id, revision_id, known_at_ticks, snapshot_json, request_hash)
+VALUES (@userId, @companyId, @revisionId, @knownAtTicks, @snapshotJson, @requestHash)
+ON CONFLICT DO NOTHING RETURNING revision_id)
+SELECT COALESCE((SELECT revision_id FROM inserted), '') AS revision_id</value></data>
+  <data name="UpdateUser" xml:space="preserve"><value>UPDATE users SET source_person_id = @sourcePersonId, city_name = @cityName, rc_name = @rcName
+WHERE id = @userId</value></data>
+</root>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Schema" xml:space="preserve"><value>CREATE TABLE user_source_accounts (
+user_id uuid PRIMARY KEY, source_person_id uuid NOT NULL, company_id uuid NOT NULL,
+CONSTRAINT uq_user_source_pair UNIQUE (source_person_id, company_id));
+CREATE TABLE user_source_account_revisions (
+user_id uuid NOT NULL REFERENCES user_source_accounts(user_id), revision_id varchar(200) NOT NULL,
+known_at_ticks bigint NOT NULL, snapshot_json text NOT NULL, request_hash varchar(64) NOT NULL,
+PRIMARY KEY (user_id, revision_id), UNIQUE (user_id, known_at_ticks));</value></data>
+  <data name="Drop" xml:space="preserve"><value>DROP TABLE user_source_account_revisions;
+DROP TABLE user_source_accounts;</value></data>
+  <data name="Lock" xml:space="preserve"><value>LOCK TABLE user_source_accounts IN SHARE ROW EXCLUSIVE MODE</value></data>
+  <data name="Identity" xml:space="preserve"><value>SELECT user_id, source_person_id, company_id FROM user_source_accounts WHERE user_id = @userId</value></data>
+  <data name="Pair" xml:space="preserve"><value>SELECT user_id, source_person_id, company_id FROM user_source_accounts
+WHERE source_person_id = @sourcePersonId AND company_id = @companyId</value></data>
+  <data name="CanBind" xml:space="preserve"><value>SELECT NOT EXISTS (SELECT 1 FROM user_source_accounts WHERE
+(user_id = @userId AND (source_person_id != @sourcePersonId OR company_id != @companyId)) OR
+(source_person_id = @sourcePersonId AND company_id = @companyId AND user_id != @userId))</value></data>
+  <data name="ViewerCompatible" xml:space="preserve"><value>SELECT NOT EXISTS (SELECT 1 FROM user_source_accounts WHERE user_id = @userId
+AND (company_id != @companyId OR CAST(@sourcePersonId AS uuid) IS NULL OR source_person_id != CAST(@sourcePersonId AS uuid)))</value></data>
+  <data name="LockAuthLineage" xml:space="preserve"><value>SELECT COALESCE((SELECT source_person_id::text FROM users WHERE id = @userId FOR UPDATE), '') AS source_person_id</value></data>
+  <data name="InsertIdentity" xml:space="preserve"><value>INSERT INTO user_source_accounts (user_id, source_person_id, company_id)
+VALUES (@userId, @sourcePersonId, @companyId) ON CONFLICT DO NOTHING</value></data>
+  <data name="Revision" xml:space="preserve"><value>SELECT snapshot_json, request_hash FROM user_source_account_revisions
+WHERE user_id = @userId AND revision_id = @revisionId</value></data>
+  <data name="Latest" xml:space="preserve"><value>SELECT snapshot_json, request_hash FROM user_source_account_revisions
+WHERE user_id = @userId AND known_at_ticks &lt;= @asOfTicks ORDER BY known_at_ticks DESC LIMIT 1</value></data>
+  <data name="LatestByPair" xml:space="preserve"><value>SELECT r.snapshot_json, r.request_hash FROM user_source_account_revisions r
+JOIN user_source_accounts a ON a.user_id = r.user_id
+WHERE a.source_person_id = @sourcePersonId AND a.company_id = @companyId AND r.known_at_ticks &lt;= @asOfTicks
+ORDER BY r.known_at_ticks DESC LIMIT 1</value></data>
+  <data name="LastTime" xml:space="preserve"><value>SELECT COALESCE(MAX(known_at_ticks), 0) FROM user_source_account_revisions WHERE user_id = @userId</value></data>
+  <data name="InsertRevision" xml:space="preserve"><value>WITH inserted AS (INSERT INTO user_source_account_revisions
+(user_id, revision_id, known_at_ticks, snapshot_json, request_hash)
+VALUES (@userId, @revisionId, @knownAtTicks, @snapshotJson, @requestHash)
+ON CONFLICT DO NOTHING RETURNING revision_id)
+SELECT COALESCE((SELECT revision_id FROM inserted), '') AS revision_id</value></data>
+</root>
